@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sweep</title>
+  <meta name="description" content="Plug an RPLIDAR A1 into your phone or computer, stand it in a room, and Sweep draws the floor plan with every wall measured. Exports an image, a drawing and a CAD file.">
+  <meta property="og:title" content="Sweep">
+  <meta property="og:description" content="A measured floor plan from one spin of a lidar.">
+  <meta property="og:image" content="https://sweep.junkdrawer.works/og.png">
+  <meta property="og:url" content="https://sweep.junkdrawer.works/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#f3f6f4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f2b55" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="preload" href="fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/barlow-semi-condensed-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <noscript><p class="noscript">Sweep needs JavaScript to talk to the lidar and draw the plan.</p></noscript>
+
+  <header class="top">
+    <a class="brand" href="./" aria-label="Sweep, home">Sweep</a>
+    <button type="button" id="open-settings" class="icon-btn" aria-label="Settings">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><circle cx="16" cy="7" r="2.2" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="10" cy="17" r="2.2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+    </button>
+  </header>
+  <div class="tape" aria-hidden="true"></div>
+
+  <main>
+    <section id="home" class="screen">
+      <div class="hero">
+        <div class="hero-text">
+          <h1>A measured floor plan from one spin of a lidar.</h1>
+          <p class="lede">Plug an RPLIDAR A1 into your phone or computer, stand it in the middle of a room, and tap Capture. Sweep draws the walls with every length marked.</p>
+          <div class="actions">
+            <button type="button" id="connect" class="primary">Connect lidar</button>
+            <button type="button" id="demo" class="secondary">Try a sample room</button>
+          </div>
+          <p class="support" id="support"></p>
+        </div>
+        <figure class="hero-plan" id="hero-plan" aria-hidden="true"></figure>
+      </div>
+
+      <section class="rooms" aria-labelledby="rooms-h">
+        <h2 id="rooms-h">Your rooms</h2>
+        <ul id="room-list" class="room-list"></ul>
+        <p id="rooms-empty" class="empty">Rooms you save show up here, with their size and area.</p>
+        <p id="rooms-total" class="total" hidden></p>
+      </section>
+    </section>
+
+    <section id="scan" class="screen" hidden>
+      <div class="bar">
+        <button type="button" class="back" data-go="home">Rooms</button>
+        <span class="bar-title" id="device-name">Lidar</span>
+        <span class="badge" id="demo-badge" hidden>Simulated</span>
+      </div>
+      <div class="scan-grid">
+        <div class="radar-wrap">
+          <canvas id="radar" aria-label="What the lidar sees, from above, its front at the top"></canvas>
+          <div id="countdown" class="countdown" hidden>
+            <span id="count-num">3</span>
+            <span id="count-text">Get below the beam, or step out of the room</span>
+          </div>
+        </div>
+        <div class="scan-side">
+          <dl class="readouts">
+            <div><dt>Turns a second</dt><dd id="spin">–</dd></div>
+            <div><dt>Points a second</dt><dd id="sps">–</dd></div>
+            <div><dt>Health</dt><dd id="health">–</dd></div>
+          </dl>
+          <p class="hint" id="scan-hint">Stand the lidar about chest height, in the middle of the room, where it can see every wall. Close the blinds: the laser goes through glass.</p>
+          <button type="button" id="capture" class="primary big">Capture</button>
+          <div class="row">
+            <button type="button" id="motor" class="secondary">Stop the motor</button>
+            <button type="button" id="disconnect" class="quiet">Disconnect</button>
+          </div>
+          <p class="note" id="motor-note" hidden></p>
+          <details id="device" class="device">
+            <summary>Lidar details</summary>
+            <dl id="device-list" class="kv"></dl>
+            <div class="row">
+              <button type="button" id="health-check" class="quiet">Check health</button>
+              <button type="button" id="reset" class="quiet">Restart the lidar</button>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section id="plan" class="screen" hidden>
+      <div class="bar">
+        <button type="button" class="back" id="plan-back" data-go="home">Rooms</button>
+        <input id="room-name" class="name-input" aria-label="Room name" maxlength="40" autocomplete="off">
+      </div>
+      <div class="plan-grid">
+        <div class="plan-main">
+          <div class="summary">
+            <span class="tape-label" id="size">–</span>
+            <span class="area" id="area"></span>
+          </div>
+          <div class="notice" id="notice" role="status" hidden></div>
+          <div class="plan-wrap"><div id="plan-svg" class="plan-svg"></div></div>
+          <div class="row">
+            <button type="button" id="second" class="secondary">Second look</button>
+            <button type="button" id="save" class="primary">Save room</button>
+          </div>
+        </div>
+        <div class="plan-side">
+          <p class="looks" id="looks"></p>
+          <section aria-labelledby="walls-h">
+            <h3 id="walls-h">Walls</h3>
+            <ol id="walls" class="walls"></ol>
+            <p class="small">Tap a wall to check it against a tape measure.</p>
+          </section>
+          <section aria-labelledby="openings-h" id="openings-sec">
+            <h3 id="openings-h">Openings</h3>
+            <ul id="openings" class="walls"></ul>
+          </section>
+          <section aria-labelledby="export-h" id="export-sec">
+            <h3 id="export-h">Export</h3>
+            <div class="row wrap">
+              <button type="button" class="secondary" data-export="png">Image</button>
+              <button type="button" class="secondary" data-export="svg">Drawing</button>
+              <button type="button" class="secondary" data-export="dxf">CAD file</button>
+              <button type="button" class="secondary" data-export="share" id="share" hidden>Share</button>
+            </div>
+            <p class="small">Image and drawing: the plan with its measurements. CAD file: DXF in millimetres, for OpenSCAD, Fusion or SketchUp.</p>
+          </section>
+          <label class="toggle"><input type="checkbox" id="show-points"> Show what the lidar saw</label>
+          <label class="toggle"><input type="checkbox" id="straighten"> Straighten walls</label>
+          <button type="button" id="delete" class="quiet danger">Delete room</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="settings" class="sheet" aria-labelledby="settings-h">
+    <form method="dialog">
+      <h2 id="settings-h">Settings</h2>
+      <fieldset>
+        <legend>Units</legend>
+        <label><input type="radio" name="units" value="ft"> Feet and inches</label>
+        <label><input type="radio" name="units" value="m"> Metres</label>
+      </fieldset>
+      <label class="field">Each look lasts
+        <select id="set-seconds"><option value="2">2 seconds</option><option value="3">3 seconds</option><option value="5">5 seconds</option><option value="8">8 seconds</option></select>
+      </label>
+      <label class="field">Time to get out of the way
+        <select id="set-countdown"><option value="0">None</option><option value="3">3 seconds</option><option value="5">5 seconds</option><option value="10">10 seconds</option></select>
+      </label>
+      <label class="field">Connect with
+        <select id="set-method"><option value="auto">Whatever suits this device</option><option value="serial">Web Serial (computers)</option><option value="usb">WebUSB (Android)</option></select>
+      </label>
+      <div class="field">
+        <span>Distance correction</span>
+        <span id="set-correction" class="value">None</span>
+        <button type="button" id="reset-correction" class="quiet" hidden>Remove</button>
+      </div>
+      <div class="field" id="backup-field">
+        <span>Backup</span>
+        <div class="row wrap">
+          <button type="button" id="backup" class="secondary">Back up all rooms</button>
+          <label class="secondary file-btn">Restore from a backup<input type="file" id="restore" accept=".json,application/json" hidden></label>
+        </div>
+      </div>
+      <p class="small">Rooms and settings stay in this browser. Nothing is sent anywhere.</p>
+      <div class="row end"><button value="close" class="primary">Done</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="calibrate" class="sheet" aria-labelledby="cal-h">
+    <form method="dialog" id="cal-form">
+      <h2 id="cal-h">Check a wall</h2>
+      <p>Sweep measured <strong id="cal-measured"></strong>. Measure the same wall with a tape, corner to corner, and type what it says.</p>
+      <label class="field">Tape says <input id="cal-tape" inputmode="decimal" autocomplete="off" placeholder="12' 4&quot;"></label>
+      <p class="small" id="cal-result"></p>
+      <div class="row end">
+        <button value="cancel" class="quiet">Cancel</button>
+        <button value="apply" id="cal-apply" class="primary" disabled>Use it</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <footer class="jd-foot">
+    <a href="https://junkdrawer.works/">Part of junkdrawer.works</a>
+    <span aria-hidden="true">·</span>
+    <a href="https://junkdrawer.works/privacy.html">Privacy</a>
+  </footer>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
