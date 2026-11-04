@@ -85,10 +85,13 @@ function thumb(outline) {
 }
 
 function renderHome() {
-  $('support').innerHTML = state.lidar ? (state.demo ? 'The simulated lidar is still running.' : 'The lidar is still connected.') : supportText();
-  $('connect').disabled = !state.lidar && !pickMethod(settings.method);
-  $('connect').hidden = single && !state.lidar;
-  $('connect').textContent = state.lidar ? 'Back to the lidar' : 'Connect lidar';
+  // A real lidar still connected keeps its place; a sample room left running doesn't stand in the way of a real one.
+  const real = !!state.lidar && !state.demo;
+  $('support').innerHTML = real ? 'The lidar is still connected.' : supportText();
+  $('connect').disabled = !real && !pickMethod(settings.method);
+  $('connect').hidden = single && !real;
+  $('connect').textContent = real ? 'Back to the lidar' : 'Connect lidar';
+  $('demo').textContent = state.lidar && state.demo ? 'Back to the sample room' : 'Try a sample room';
   const rooms = listRooms();
   const list = $('room-list');
   list.innerHTML = '';
@@ -132,7 +135,7 @@ function explain(err) {
 }
 
 async function connect() {
-  if (state.lidar) { show('scan'); return; }
+  if (state.lidar && !state.demo) { show('scan'); return; }
   const method = pickMethod(settings.method);
   if (!method) { toast('This browser can’t reach USB devices.'); return; }
   let t;
@@ -478,6 +481,7 @@ let calRun = -1;
 function openCalibrate(i) {
   calRun = i;
   const run = state.plan.runs[i];
+  $('cal-h').textContent = `Check wall ${i + 1}`;
   $('cal-measured').textContent = fmtLength(run.len, units());
   $('cal-tape').value = '';
   $('cal-result').textContent = '';
@@ -526,7 +530,8 @@ function correctionText() {
 
 async function setMotor(on) {
   if (!state.lidar) return;
-  await state.lidar.setMotor(on);
+  const lidar = state.lidar;
+  await lidar.setMotor(on);
   $('motor').textContent = on ? 'Stop the motor' : 'Start the motor';
   if (!on) {
     setTimeout(() => {
@@ -537,13 +542,20 @@ async function setMotor(on) {
         ? 'This adapter keeps the motor running whatever Sweep asks. That’s fine: Sweep works the same. Unplug the lidar to stop it.'
         : 'Motor stopped. Capture starts it again.';
     }, 2500);
-  } else $('motor-note').hidden = true;
+    return;
+  }
+  $('motor-note').hidden = true;
+  // An A1 can stop measuring while its motor is stopped, so once the motor has had a moment to spin up, start the
+  // scan again (a fresh STOP and SCAN, which does no harm if it never stopped).
+  await new Promise(r => setTimeout(r, 600));
+  if (state.lidar !== lidar || !lidar.motorOn) return;
+  try { await lidar.startScan(); } catch (err) { toast(explain(err), 6000); }
 }
 
 // ---------- wiring up ----------
 
 $('connect').addEventListener('click', connect);
-$('demo').addEventListener('click', startDemo);
+$('demo').addEventListener('click', () => { if (state.lidar && state.demo) show('scan'); else startDemo(); });
 $('capture').addEventListener('click', () => capture(false));
 $('disconnect').addEventListener('click', async () => { await stopLidar(false); show('home'); });
 $('motor').addEventListener('click', () => setMotor(!state.lidar?.motorOn));

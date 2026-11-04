@@ -163,7 +163,7 @@ await page.click('#plan-back');
 check(await screen() === 'scan', 'back to the live view');
 await page.click('#scan .back');
 check(await screen() === 'home', 'home');
-check((await text('#connect')) === 'Back to the lidar', 'the lidar is still running');
+check((await text('#demo')) === 'Back to the sample room' && (await text('#connect')) === 'Connect lidar', 'the sample room is still running, and a real lidar can still connect');
 check(await page.locator('#room-list li').count() === 1, 'one saved room');
 check((await text('#room-list .room-name')) === 'Front room', 'renamed');
 check(/^15′ 0″ × 19′ 0″, 28\d sq ft$/.test(await text('#room-list .room-meta')), `room summary: ${await text('#room-list .room-meta')}`);
@@ -204,8 +204,11 @@ check(await page.locator('#calibrate').evaluate(d => d.open), 'tapping a wall op
 const measured = inches(await text('#cal-measured'))[0];
 const tape = measured + 4;
 await page.fill('#cal-tape', `${Math.floor(tape / 12)}' ${tape % 12}"`);
-const pct = ((tape / measured - 1) * 100).toFixed(1);
-check((await text('#cal-result')).startsWith(`Sweep reads ${pct}% short.`), `calibration says ${pct}% short: ${await text('#cal-result')}`);
+// Sweep works from the wall's unrounded length, so its figure can differ from this one (worked from whole inches) by a little.
+const pct = (tape / measured - 1) * 100;
+const said = (await text('#cal-result')).match(/^Sweep reads (\d+\.\d)% short\. Use it, and every room gets that correction\.$/);
+check(said && Math.abs(+said[1] - pct) < 0.35, `calibration says about ${pct.toFixed(1)}% short: ${await text('#cal-result')}`);
+check((await text('#cal-h')) === 'Check wall 1', 'the box names the wall');
 await page.click('#cal-apply');
 await toastSays(/^Distance correction set: \+\d\.\d%\.$/, 'correction toast');
 const corrected = inches(await text('#size'));
@@ -234,9 +237,9 @@ await toastSays('Restored 1 room.', 'restore toast');
 await page.click('#settings button[value="close"]');
 check(await page.locator('#room-list li').count() === 1 && (await text('#room-list .room-name')) === 'Front room', 'restored');
 
-// Disconnect.
-await page.click('#connect');
-check(await screen() === 'scan', 'Back to the lidar');
+// Back to the running sample room, then disconnect.
+await page.click('#demo');
+check(await screen() === 'scan', 'Back to the sample room');
 await page.click('#disconnect');
 await until(async () => (await screen()) === 'home' && (await text('#connect')) === 'Connect lidar', 3000, 'disconnected');
 

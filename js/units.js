@@ -24,7 +24,8 @@ export function fmtArea(m2, units = 'ft') {
 export function fmtSize(w, h, units = 'ft') { return `${fmtLength(w, units)} × ${fmtLength(h, units)}`; }
 
 // Reads a typed length into metres: 12' 4", 12ft 4in, 12'4, 148", 148 in, 12.5', 3.76 m, 376 cm, 3760 mm.
-// A bare number is feet (with units 'ft') or metres (with units 'm'). Returns null if it can't read it.
+// A bare number is feet (with units 'ft') or metres (with units 'm'); with feet, two bare numbers are feet and
+// inches ("12 4"), which is quicker on a phone's keyboard. Returns null if it can't read it.
 export function parseLength(text, units = 'ft') {
   if (typeof text !== 'string') return null;
   const t = text.trim().toLowerCase().replace(/[’′]/g, "'").replace(/[”″]/g, '"').replace(/,/g, '.');
@@ -39,5 +40,6 @@ export function parseLength(text, units = 'ft') {
   if ((m = t.match(new RegExp(`^${num}\\s*cm$`)))) return parseFloat(m[1]) / 100;
   if ((m = t.match(new RegExp(`^${num}\\s*(?:m|metres|meters|metre|meter)$`)))) return parseFloat(m[1]);
   if ((m = t.match(new RegExp(`^${num}$`)))) return units === 'm' ? parseFloat(m[1]) : parseFloat(m[1]) * 12 * INCH;
+  if (units !== 'm' && (m = t.match(new RegExp(`^${num}\\s+${num}$`)))) return (parseFloat(m[1]) * 12 + parseFloat(m[2])) * INCH;
   return null;
 }

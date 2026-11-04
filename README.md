@@ -37,7 +37,7 @@
 ## How well it measures
 
 In the simulator, which models the A1's noise (about 2 mm plus 0.4% of the distance), its dropouts at glancing
-angles, glass, and a person standing beside it, the three sample rooms come out within 5 mm overall and within 2 cm
+angles, glass, and a person standing beside it, the three sample rooms come out within 6 mm overall and within 2 cm
 wall by wall, with openings within 8 cm. Over 84 random placements of the lidar, 77 were within 4 cm and 2% of the
 true size; the rest were spots where a corner of the room couldn't be seen at all (inside the leg of the L, behind
 the fridge) or a single look with the person in the way.

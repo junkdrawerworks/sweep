@@ -38,6 +38,8 @@ test('reading what someone typed from a tape measure', () => {
     assert.ok(got !== null && Math.abs(got - want) < 1e-9, `${text}: ${got} against ${want}`);
   }
   assert.equal(parseLength('3.76', 'm'), 3.76);
+  assert.ok(Math.abs(parseLength('12 5') - 149 * INCH) < 1e-9, 'two bare numbers are feet and inches');
+  assert.equal(parseLength('12 5', 'm'), null);
   for (const junk of ['', '   ', 'twelve feet', '12 furlongs', '-3 m', null]) assert.equal(parseLength(junk), null, String(junk));
 });
 

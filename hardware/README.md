@@ -15,13 +15,15 @@ stand rather than the lidar's socket.
 the face the lidar stands on prints against the build plate, so it comes out flat, and the nut slot's roof is a short
 bridge.
 
-**Parts.** 4 M2.5 × 6 mm screws (socket or button head) for the lidar's four feet, one 1/4"-20 hex nut (7/16" across
-the flats), and 3 zip ties up to 4.8 mm wide: two for the adapter board, one for the USB cable.
+**Parts.** 4 M2.5 × 6 mm screws (socket or button head) for the lidar's four feet, two 1/4"-20 hex nuts (7/16"
+across the flats; the fit test keeps the first, because a nut pushed into its slot doesn't come back out), and 3 zip
+ties up to 4.8 mm wide: two for the adapter board, one for the USB cable.
 
-**Putting it together.** Slide the nut into the slot in the round boss underneath, flat side first, until it sits
-over the hole. Stand the lidar on the plate with its four feet over the four holes and its cable socket over the
-square hole (the apron sticks out on the socket side). Screw it on from underneath. Plug the cable in through the
-square hole, lay the adapter board on the apron, micro-USB end outwards, and zip-tie it down.
+**Putting it together.** With the lidar upside down on a towel, set the stand on it face down: the four feet on the
+four holes, the cable socket over the rectangular opening (the apron sticks out on the socket's side). Screw it on.
+Plug the cable in through the opening and lay it along the opening towards the apron. Slide the nut into the slot in
+the round boss with two of its flat sides against the slot's walls, so a corner goes in first, until it sits over the
+hole. Turn it over, lay the adapter board on the apron with its micro-USB end outwards, and zip-tie it down.
 
 **What it's based on.** The feet's positions and sizes come from a model of the A1M8 (hidmic/airi-hw's
 `RPLIDAR-A1M8-R1.stl`): four hex standoffs, 5 mm across the flats, with a 2.0 mm bore, which is M2.5 thread. Nobody

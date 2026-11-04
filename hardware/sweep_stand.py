@@ -33,7 +33,8 @@ CONNECTOR = (-10.0, 10.5, 24.0, 30.0)  # x0, x1, y0, y1 of the 7-pin socket unde
 
 # ---- screws: M2.5 x 6 mm, from below, into the bottom of the lidar's feet ----
 SCREW_CLEAR = 2.9                  # through hole (M2.5 clearance; an M2 or a 2-56 also passes)
-UNDER_HEAD = 2.5                   # plastic under each screw head: a 6 mm screw goes 3.5 mm into the foot
+SCREW_LEN = 6.0                    # M2.5 x 6 mm
+UNDER_HEAD = 2.5                   # plastic under each screw head: so each screw goes 3.5 mm into its foot
 HEAD_D = 7.4                       # counterbore, wide enough for an M3 washer (7 mm) as a spacer if a screw is long
 
 # ---- the tripod nut: 1/4"-20 hex, 7/16" (11.11 mm) across the flats, 7/32" (5.56 mm) thick ----
