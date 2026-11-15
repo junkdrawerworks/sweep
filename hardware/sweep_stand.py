@@ -13,7 +13,10 @@ the A1M8 (hidmic/airi-hw, RPLIDAR-A1M8-R1.stl): (-41.77, +-20) and (28.23, +-28)
 match a real lidar before the full print.
 
 The STLs are written upside down, the way they print: the plate's top face (the one the lidar stands on) on the
-build plate, so it comes out flat, and the nut slot's roof is a short bridge.
+build plate, so it comes out flat, and the nut slot's roof is a short bridge. Upside down means turned over (a
+rotation), never mirrored: a mirror image passes every other check but puts the cable opening on the wrong side of the
+feet, and the first export was one. So before writing, each part is turned back over the way a hand would and must
+have a hole under each foot and its opening under the socket.
 """
 import os
 import sys
@@ -110,17 +113,36 @@ def stand(thick=5.0, apron=True, counterbore=True, lighten=False):
 
 
 def printable(m):
-    """Upside down, as it prints: the lidar's face on the build plate, then moved to sit at z = 0."""
-    flipped = m.mirror([0, 0, 1])  # z -> -z puts the top face (z = 0) at the bottom
+    """Upside down, as it prints: turned over about x, (x, y, z) -> (x, -y, -z), so the lidar's face is on the build
+    plate, then moved to sit at z = 0. A rotation: a mirror would print the part left-handed."""
+    flipped = m.rotate([180, 0, 0])
     lo = flipped.bounding_box()
     return flipped.translate([0, 0, -lo[2]])
+
+
+def solid_at(m, x, y, z):
+    return (m ^ Manifold.cube([0.3, 0.3, 0.3], True).translate([x, y, z])).volume() > 1e-6
+
+
+def fit_problems(printed):
+    """Turn the printed part back over, the way a hand would, and check it takes the lidar: a hole under each of the
+    four feet and the opening under the 7-pin socket."""
+    used = printed.rotate([180, 0, 0])
+    used = used.translate([0, 0, -used.bounding_box()[5]])  # the lidar's face up, at z = 0
+    z = -1.0                                                 # inside the plate, just under that face
+    problems = [f'no hole under the foot at ({x:g}, {y:g})' for x, y in FEET if solid_at(used, x, y, z)]
+    x0, x1, y0, y1 = CONNECTOR
+    under = [(x, y) for x in np.linspace(x0 + 0.5, x1 - 0.5, 6) for y in np.linspace(y0 + 0.5, y1 - 0.5, 3)]
+    if any(solid_at(used, x, y, z) for x, y in under):
+        problems.append('plastic under the socket (a mirror image?)')
+    return problems
 
 
 def write_stl(m, name, expect):
     mesh = m.to_mesh()
     tm = trimesh.Trimesh(vertices=np.asarray(mesh.vert_properties)[:, :3], faces=np.asarray(mesh.tri_verts), process=True)
     size = tm.extents
-    problems = []
+    problems = fit_problems(m)
     if not tm.is_watertight:
         problems.append('not watertight')
     if len(tm.split(only_watertight=False)) != 1:
